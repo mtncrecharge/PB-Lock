@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Replenish PB Lock — Recharge Dashboard</title>
+<title>PB Lock — Recharge Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -118,6 +118,8 @@
   .btn-refresh:hover { border-color: var(--accent); color: var(--accent); }
 
   .btn-refresh svg { width: 13px; height: 13px; }
+
+  #file-input { display: none; }
 
   .spinning { animation: spin .8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -503,11 +505,11 @@
 <header class="topbar">
   <div class="topbar-left">
     <div class="logo-pill">Recharge</div>
-    <span class="topbar-title">Replenish PB Lock <span>/ Live Dashboard</span></span>
+    <span class="topbar-title">PB Lock <span>/ Live Dashboard</span></span>
   </div>
   <div class="topbar-right">
     <span class="last-updated" id="last-updated">—</span>
-    <button class="btn-refresh" id="btn-refresh" onclick="loadData()">
+    <button class="btn-refresh" id="btn-refresh">
       <svg id="refresh-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M13.5 8A5.5 5.5 0 1 1 10 3.07"/>
         <path d="M13.5 2v3.5H10"/>
@@ -618,9 +620,9 @@
 <script>
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTMWv2mD7Ji9EY5gAuC0tRquUY7qQGBT-rI4IpsU6JfrM-7XrLOom3Q4GTpt1dWYbEYEH146BWpPfxD/pub?gid=1068833881&single=true&output=csv';
 const PROXIES = [
+  u => u,
   u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
   u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-  u => `https://cors-anywhere.herokuapp.com/${u}`,
 ];
 
 let allData = [], filtered = [];
@@ -628,6 +630,35 @@ let sortKey = 'lock_n', sortDir = -1;
 let page = 1;
 const PAGE = 20;
 let chartA = null, chartD = null;
+
+/* ── LOAD ── */
+async function loadData() {
+  showLoading(true);
+  hideError();
+  const icon = document.getElementById('refresh-icon');
+  icon.classList.add('spinning');
+
+  let lastErr;
+  for (const proxy of PROXIES) {
+    try {
+      const res = await fetch(proxy(CSV_URL));
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      allData = parseCSV(text).map(enrich);
+      populateFilters();
+      applyFilters();
+      document.getElementById('last-updated').textContent =
+        'Updated ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      return;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  showError('Gagal fetch data: ' + lastErr.message + ' — Pastikan GSheet sudah di-publish (File → Share → Publish to web → CSV).');
+  renderEmpty('Tidak dapat memuat data dari Google Sheets.');
+}
+
+document.getElementById('btn-refresh').addEventListener('click', loadData);
 
 /* ── CSV PARSER ── */
 function parseCSV(raw) {
@@ -665,31 +696,6 @@ function enrich(r) {
   /* formula: currentPB% = (Slots - EmptySlots) / Slots  */
   r.currentPB_num = slots > 0 ? Math.round((slots - empty) / slots * 100) : 0;
   return r;
-}
-
-/* ── LOAD ── */
-async function loadData() {
-  showLoading(true);
-  hideError();
-  const icon = document.getElementById('refresh-icon');
-  icon.classList.add('spinning');
-
-  try {
-    const res  = await fetch(CSV_URL);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const text = await res.text();
-    allData    = parseCSV(text).map(enrich);
-    populateFilters();
-    applyFilters();
-    document.getElementById('last-updated').textContent =
-      'Updated ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  } catch (e) {
-    showError('Gagal fetch data: ' + e.message + ' — Pastikan GSheet sudah di-publish (File → Share → Publish to web → CSV).');
-    renderEmpty('Tidak dapat memuat data dari Google Sheets.');
-  } finally {
-    showLoading(false);
-    icon.classList.remove('spinning');
-  }
 }
 
 /* ── FILTERS ── */
