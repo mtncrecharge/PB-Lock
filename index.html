@@ -121,6 +121,142 @@
 
   #file-input { display: none; }
 
+  .btn-view {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--muted2);
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color .15s, color .15s;
+    white-space: nowrap;
+  }
+  .btn-view:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-view.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .btn-view svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+  /* ── PHONE MODE ── */
+  body.phone-mode {
+    background: #0a0a0a;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 20px 0;
+  }
+
+  body.phone-mode #phone-frame {
+    width: 393px;
+    min-height: 852px;
+    background: var(--bg);
+    border-radius: 16px;
+    border: 10px solid #111;
+    box-shadow:
+      0 0 0 1px #2a2a2a,
+      0 0 0 3px #1a1a1a,
+      0 40px 100px rgba(0,0,0,.9);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Android status bar */
+  body.phone-mode #phone-frame::before {
+    content: '';
+    display: block;
+    height: 28px;
+    background: #0d0d0d;
+    flex-shrink: 0;
+  }
+
+  /* Android nav bar (bottom) */
+  body.phone-mode #phone-frame::after {
+    content: '— — —';
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    background: #0d0d0d;
+    color: #444;
+    font-size: 10px;
+    letter-spacing: 4px;
+    flex-shrink: 0;
+    order: 999;
+  }
+
+  body.phone-mode #phone-frame > .topbar {
+    position: relative;
+    top: auto;
+  }
+
+  body.phone-mode #phone-frame > .topbar .last-updated {
+    display: none;
+  }
+
+  body.phone-mode #phone-frame > #main-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.phone-mode .shell {
+    max-width: 100%;
+    padding: 12px 12px 40px;
+  }
+
+  body.phone-mode .metric-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  body.phone-mode .chart-row {
+    grid-template-columns: 1fr;
+  }
+
+  body.phone-mode .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  body.phone-mode .filter-bar input,
+  body.phone-mode .filter-bar select {
+    min-width: 0;
+    width: 100%;
+  }
+
+  body.phone-mode .filter-bar .result-count {
+    margin-left: 0;
+    text-align: right;
+  }
+
+  body.phone-mode .table-scroll {
+    font-size: 11px;
+  }
+
+  body.phone-mode thead th,
+  body.phone-mode tbody td {
+    padding: 7px 8px;
+  }
+
+  body.phone-mode .cell-name {
+    max-width: 120px;
+  }
+
+  body.phone-mode .topbar {
+    padding: 0 14px;
+  }
+
+  body.phone-mode .topbar-title span {
+    display: none;
+  }
+
   .spinning { animation: spin .8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -496,6 +632,7 @@
 </style>
 </head>
 <body>
+<div id="phone-frame">
 
 <div id="loading-overlay">
   <div class="spinner"></div>
@@ -509,6 +646,13 @@
   </div>
   <div class="topbar-right">
     <span class="last-updated" id="last-updated">—</span>
+    <button class="btn-view" id="btn-view" title="Toggle phone view" onclick="togglePhoneView()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="1" width="8" height="14" rx="2"/>
+        <line x1="7.5" y1="12.5" x2="8.5" y2="12.5" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      Phone
+    </button>
     <button class="btn-refresh" id="btn-refresh">
       <svg id="refresh-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M13.5 8A5.5 5.5 0 1 1 10 3.07"/>
@@ -519,6 +663,7 @@
   </div>
 </header>
 
+<div id="main-scroll">
 <div class="shell">
   <div class="error-banner" id="error-banner"></div>
 
@@ -616,7 +761,8 @@
       <button class="pag-btn" id="btn-next" onclick="changePage(1)" disabled>Next →</button>
     </div>
   </div>
-</div>
+</div><!-- /main-scroll -->
+</div><!-- /phone-frame -->
 
 <script>
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTMWv2mD7Ji9EY5gAuC0tRquUY7qQGBT-rI4IpsU6JfrM-7XrLOom3Q4GTpt1dWYbEYEH146BWpPfxD/pub?gid=1068833881&single=true&output=csv';
@@ -631,6 +777,17 @@ let sortKey = 'lock_n', sortDir = -1;
 let page = 1;
 const PAGE = 20;
 let chartA = null, chartD = null;
+
+/* ── PHONE VIEW TOGGLE ── */
+function togglePhoneView() {
+  const body = document.body;
+  const btn  = document.getElementById('btn-view');
+  const isPhone = body.classList.toggle('phone-mode');
+  btn.classList.toggle('active', isPhone);
+  btn.querySelector('svg').style.opacity = isPhone ? '1' : '';
+  // Re-render charts after layout shift
+  setTimeout(() => { if (allData.length) renderCharts(); }, 50);
+}
 
 /* ── LOAD ── */
 function fetchWithTimeout(url, ms) {
