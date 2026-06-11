@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Replenish PB Lock — Recharge Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0f0f10;
+    --bg2: #18181b;
+    --bg3: #222226;
+    --bg4: #2a2a2f;
+    --border: rgba(255,255,255,.08);
+    --border2: rgba(255,255,255,.14);
+    --text: #f4f4f5;
+    --muted: #71717a;
+    --muted2: #a1a1aa;
+    --accent: #adff2f;
+    --accent-dim: rgba(173,255,47,.12);
+    --accent-dim2: rgba(173,255,47,.06);
+    --red: #f87171;
+    --red-bg: rgba(248,113,113,.1);
+    --amber: #fbbf24;
+    --amber-bg: rgba(251,191,36,.1);
+    --green: #4ade80;
+    --green-bg: rgba(74,222,128,.1);
+    --blue: #60a5fa;
+    --blue-bg: rgba(96,165,250,.1);
+    --radius: 8px;
+    --radius-lg: 12px;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-pill {
+    background: var(--accent);
+    color: #0f0f10;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 4px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .topbar-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .topbar-title span {
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .last-updated {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  .btn-refresh {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--muted2);
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color .15s, color .15s;
+  }
+
+  .btn-refresh:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-refresh svg { width: 13px; height: 13px; }
+
+  .spinning { animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* LAYOUT */
+  .shell {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px 24px 60px;
+  }
+
+  /* METRICS */
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 900px) {
+    .metric-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  @media (max-width: 560px) {
+    .metric-grid { grid-template-columns: repeat(2, 1fr); }
+    .shell { padding: 16px 14px 60px; }
+    .topbar { padding: 0 14px; }
+  }
+
+  .metric {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .metric::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: 2px 2px 0 0;
+  }
+
+  .metric.c-lock::before  { background: var(--red); }
+  .metric.c-empty::before { background: var(--amber); }
+  .metric.c-total::before { background: var(--accent); }
+  .metric.c-online::before{ background: var(--green); }
+  .metric.c-offline::before{ background: var(--red); }
+
+  .metric-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 8px;
+  }
+
+  .metric-value {
+    font-size: 28px;
+    font-weight: 600;
+    font-family: var(--mono);
+    line-height: 1;
+  }
+
+  .metric-value.v-red    { color: var(--red); }
+  .metric-value.v-amber  { color: var(--amber); }
+  .metric-value.v-green  { color: var(--green); }
+  .metric-value.v-accent { color: var(--accent); }
+
+  .metric-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 5px;
+  }
+
+  /* CHARTS */
+  .chart-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 720px) {
+    .chart-row { grid-template-columns: 1fr; }
+  }
+
+  .chart-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+  }
+
+  .chart-card-title {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  /* FILTERS */
+  .filter-bar {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 12px 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .filter-bar input,
+  .filter-bar select {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: var(--radius);
+    font-family: inherit;
+    transition: border-color .15s;
+    outline: none;
+  }
+
+  .filter-bar input:focus,
+  .filter-bar select:focus {
+    border-color: var(--accent);
+  }
+
+  .filter-bar input { min-width: 200px; }
+  .filter-bar select { min-width: 140px; }
+
+  .result-count {
+    font-size: 12px;
+    color: var(--muted);
+    margin-left: auto;
+    font-family: var(--mono);
+  }
+
+  /* TABLE */
+  .table-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .table-scroll { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border2);
+  }
+
+  thead th {
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 500;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--muted);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: color .15s;
+  }
+
+  thead th:hover { color: var(--text); }
+  thead th.sorted { color: var(--accent); }
+
+  thead th .si {
+    font-size: 9px;
+    margin-left: 3px;
+    opacity: .4;
+  }
+
+  thead th.sorted .si { opacity: 1; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .1s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--bg3); }
+
+  tbody td {
+    padding: 9px 12px;
+    vertical-align: middle;
+  }
+
+  .cell-name {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  .cell-area {
+    color: var(--muted2);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .cell-type {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--blue);
+    background: var(--blue-bg);
+    padding: 2px 7px;
+    border-radius: 4px;
+    display: inline-block;
+    white-space: nowrap;
+  }
+
+  .cell-mono {
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  /* lock pill */
+  .lock-pill {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 9px;
+    border-radius: 20px;
+    display: inline-block;
+  }
+
+  .lp-high   { background: var(--red-bg);   color: var(--red); }
+  .lp-med    { background: var(--amber-bg);  color: var(--amber); }
+  .lp-low    { background: var(--green-bg);  color: var(--green); }
+
+  /* fill bar */
+  .fill-wrap { display: flex; align-items: center; gap: 6px; min-width: 90px; }
+  .fill-bg   { flex: 1; height: 5px; border-radius: 3px; background: var(--bg4); overflow: hidden; }
+  .fill-bar  { height: 100%; border-radius: 3px; transition: width .3s; }
+  .fill-pct  { font-family: var(--mono); font-size: 11px; color: var(--muted2); min-width: 34px; text-align: right; }
+
+  /* aws pill */
+  .aws-pill {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+
+  .aws-pill::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .aws-on  { background: var(--green-bg);  color: var(--green); }
+  .aws-on::before { background: var(--green); }
+  .aws-off { background: var(--red-bg);    color: var(--red); }
+  .aws-off::before { background: var(--red); }
+
+  /* link */
+  .link-cell a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 16px;
+    transition: color .15s;
+    display: inline-block;
+    padding: 2px 4px;
+  }
+
+  .link-cell a:hover { color: var(--accent); }
+
+  /* PAGINATION */
+  .pagination {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--bg3);
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  .pag-btn {
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    color: var(--muted2);
+    padding: 4px 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    transition: border-color .15s, color .15s;
+  }
+
+  .pag-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .pag-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+  /* STATE */
+  .state-row td {
+    text-align: center;
+    padding: 40px 12px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .state-row .big-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+    opacity: .4;
+  }
+
+  /* LOADING OVERLAY */
+  #loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,15,16,.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    gap: 12px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+    transition: opacity .3s;
+  }
+
+  #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+
+  .error-banner {
+    background: var(--red-bg);
+    border: 1px solid rgba(248,113,113,.25);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    color: var(--red);
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <span>Fetching data from Google Sheets...</span>
+</div>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="logo-pill">Recharge</div>
+    <span class="topbar-title">Replenish PB Lock <span>/ Live Dashboard</span></span>
+  </div>
+  <div class="topbar-right">
+    <span class="last-updated" id="last-updated">—</span>
+    <button class="btn-refresh" id="btn-refresh" onclick="loadData()">
+      <svg id="refresh-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M13.5 8A5.5 5.5 0 1 1 10 3.07"/>
+        <path d="M13.5 2v3.5H10"/>
+      </svg>
+      Refresh
+    </button>
+  </div>
+</header>
+
+<div class="shell">
+  <div class="error-banner" id="error-banner"></div>
+
+  <div class="metric-grid">
+    <div class="metric c-total">
+      <div class="metric-label">Total Terminal</div>
+      <div class="metric-value v-accent" id="m-total">—</div>
+      <div class="metric-sub" id="m-total-sub">dengan PB Lock aktif</div>
+    </div>
+    <div class="metric c-lock">
+      <div class="metric-label">Total PB Lock</div>
+      <div class="metric-value v-red" id="m-lock">—</div>
+      <div class="metric-sub">unit terkunci</div>
+    </div>
+    <div class="metric c-empty">
+      <div class="metric-label">Total Empty Slot</div>
+      <div class="metric-value v-amber" id="m-empty">—</div>
+      <div class="metric-sub">slot kosong perlu isi</div>
+    </div>
+    <div class="metric c-online">
+      <div class="metric-label">Online (AWS)</div>
+      <div class="metric-value v-green" id="m-online">—</div>
+      <div class="metric-sub" id="m-online-pct">terkoneksi</div>
+    </div>
+    <div class="metric c-offline">
+      <div class="metric-label">Offline</div>
+      <div class="metric-value v-red" id="m-offline">—</div>
+      <div class="metric-sub">tidak terkoneksi</div>
+    </div>
+  </div>
+
+  <div class="chart-row">
+    <div class="chart-card">
+      <div class="chart-card-title">PB Lock per Area (top 10)</div>
+      <div style="position:relative;height:240px">
+        <canvas id="chartArea" role="img" aria-label="Bar chart horizontal PB Lock per area"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">Distribusi jumlah PB Lock</div>
+      <div style="position:relative;height:240px">
+        <canvas id="chartDist" role="img" aria-label="Bar chart distribusi jumlah PB Lock per terminal"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <input type="text" id="search" placeholder="🔍  Cari nama terminal..." oninput="applyFilters()">
+    <select id="f-area" onchange="applyFilters()">
+      <option value="">Semua Area</option>
+    </select>
+    <select id="f-aws" onchange="applyFilters()">
+      <option value="">Semua Status AWS</option>
+      <option value="on">Online</option>
+      <option value="off">Offline</option>
+    </select>
+    <select id="f-lock" onchange="applyFilters()">
+      <option value="">Semua PB Lock</option>
+      <option value="high">High ≥4</option>
+      <option value="med">Medium 2–3</option>
+      <option value="low">Low = 1</option>
+    </select>
+    <select id="f-type" onchange="applyFilters()">
+      <option value="">Semua Type</option>
+    </select>
+    <span class="result-count" id="result-count">—</span>
+  </div>
+
+  <div class="table-card">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortBy('Terminal Name')">Terminal <span class="si" id="si-Terminal Name">↕</span></th>
+            <th onclick="sortBy('Deployed Area')">Area <span class="si" id="si-Deployed Area">↕</span></th>
+            <th onclick="sortBy('typeID')">Type <span class="si" id="si-typeID">↕</span></th>
+            <th onclick="sortBy('lock_n')">PB Lock <span class="si" id="si-lock_n">↕</span></th>
+            <th onclick="sortBy('slots_n')">Slots <span class="si" id="si-slots_n">↕</span></th>
+            <th onclick="sortBy('currentPB_num')">Fill % <span class="si" id="si-currentPB_num">↕</span></th>
+            <th onclick="sortBy('empty_n')">Empty <span class="si" id="si-empty_n">↕</span></th>
+            <th onclick="sortBy('charging_n')">Charging <span class="si" id="si-charging_n">↕</span></th>
+            <th onclick="sortBy('aws_bool')">AWS <span class="si" id="si-aws_bool">↕</span></th>
+            <th>Link</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr class="state-row"><td colspan="10"><div class="big-icon">⏳</div><div>Loading...</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <button class="pag-btn" id="btn-prev" onclick="changePage(-1)" disabled>← Prev</button>
+      <span id="pag-info">—</span>
+      <button class="pag-btn" id="btn-next" onclick="changePage(1)" disabled>Next →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTMWv2mD7Ji9EY5gAuC0tRquUY7qQGBT-rI4IpsU6JfrM-7XrLOom3Q4GTpt1dWYbEYEH146BWpPfxD/pub?gid=1068833881&single=true&output=csv';
+const PROXIES = [
+  u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  u => `https://cors-anywhere.herokuapp.com/${u}`,
+];
+
+let allData = [], filtered = [];
+let sortKey = 'lock_n', sortDir = -1;
+let page = 1;
+const PAGE = 20;
+let chartA = null, chartD = null;
+
+/* ── CSV PARSER ── */
+function parseCSV(raw) {
+  const lines = raw.trim().split('\n');
+  const hdrs  = splitCSVLine(lines[0]);
+  return lines.slice(1).map(l => {
+    const vals = splitCSVLine(l);
+    const row  = {};
+    hdrs.forEach((h, i) => row[h] = (vals[i] ?? '').trim());
+    return row;
+  }).filter(r => r['Total PB Lock'] && r['Total PB Lock'] !== '');
+}
+
+function splitCSVLine(line) {
+  const out = []; let cur = '', inQ = false;
+  for (let c of line) {
+    if (c === '"') { inQ = !inQ; continue; }
+    if (c === ',' && !inQ) { out.push(cur); cur = ''; } else cur += c;
+  }
+  out.push(cur);
+  return out;
+}
+
+/* ── ENRICH ── */
+function enrich(r) {
+  const slots    = parseFloat(r['Number of Slots'])    || 0;
+  const empty    = parseFloat(r['Total Empty Slot'])   || 0;
+  const charging = parseFloat(r['Total PB Charging'])  || 0;
+  const lock     = parseFloat(r['Total PB Lock'])      || 0;
+  r.slots_n    = slots;
+  r.empty_n    = empty;
+  r.charging_n = charging;
+  r.lock_n     = lock;
+  r.aws_bool   = /^true$/i.test((r['AWS Connectivity'] || '').trim());
+  /* formula: currentPB% = (Slots - EmptySlots) / Slots  */
+  r.currentPB_num = slots > 0 ? Math.round((slots - empty) / slots * 100) : 0;
+  return r;
+}
+
+/* ── LOAD ── */
+async function loadData() {
+  showLoading(true);
+  hideError();
+  const icon = document.getElementById('refresh-icon');
+  icon.classList.add('spinning');
+
+  try {
+    const res  = await fetch(CSV_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    allData    = parseCSV(text).map(enrich);
+    populateFilters();
+    applyFilters();
+    document.getElementById('last-updated').textContent =
+      'Updated ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  } catch (e) {
+    showError('Gagal fetch data: ' + e.message + ' — Pastikan GSheet sudah di-publish (File → Share → Publish to web → CSV).');
+    renderEmpty('Tidak dapat memuat data dari Google Sheets.');
+  } finally {
+    showLoading(false);
+    icon.classList.remove('spinning');
+  }
+}
+
+/* ── FILTERS ── */
+function populateFilters() {
+  const areas = [...new Set(allData.map(r => r['Deployed Area']))].filter(Boolean).sort();
+  const types = [...new Set(allData.map(r => r['typeID']))].filter(Boolean).sort();
+  const fa = document.getElementById('f-area');
+  fa.innerHTML = '<option value="">Semua Area</option>' + areas.map(a => `<option value="${a}">${a}</option>`).join('');
+  const ft = document.getElementById('f-type');
+  ft.innerHTML = '<option value="">Semua Type</option>' + types.map(t => `<option value="${t}">${t}</option>`).join('');
+}
+
+function applyFilters() {
+  const q    = document.getElementById('search').value.toLowerCase();
+  const area = document.getElementById('f-area').value;
+  const aws  = document.getElementById('f-aws').value;
+  const lockF= document.getElementById('f-lock').value;
+  const type = document.getElementById('f-type').value;
+
+  filtered = allData.filter(r => {
+    if (q && !r['Terminal Name'].toLowerCase().includes(q) && !r['Terminal ID'].toLowerCase().includes(q)) return false;
+    if (area && r['Deployed Area'] !== area)  return false;
+    if (aws === 'on'  && !r.aws_bool)          return false;
+    if (aws === 'off' &&  r.aws_bool)          return false;
+    if (type && r['typeID'] !== type)           return false;
+    if (lockF === 'high' && r.lock_n < 4)       return false;
+    if (lockF === 'med'  && (r.lock_n < 2 || r.lock_n > 3)) return false;
+    if (lockF === 'low'  && r.lock_n !== 1)     return false;
+    return true;
+  });
+
+  page = 1;
+  doSort();
+  updateMetrics();
+  renderTable();
+  renderCharts();
+  document.getElementById('result-count').textContent = filtered.length + ' terminal';
+}
+
+/* ── SORT ── */
+function sortBy(key) {
+  if (sortKey === key) sortDir *= -1;
+  else { sortKey = key; sortDir = -1; }
+
+  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
+  const si = document.getElementById('si-' + key);
+  if (si) {
+    si.closest('th').classList.add('sorted');
+    si.textContent = sortDir === -1 ? '↓' : '↑';
+  }
+  doSort();
+  renderTable();
+}
+
+function doSort() {
+  filtered.sort((a, b) => {
+    let av = a[sortKey], bv = b[sortKey];
+    if (typeof av === 'string' && typeof bv === 'string') {
+      av = av.toLowerCase(); bv = bv.toLowerCase();
+    }
+    if (av < bv) return sortDir;
+    if (av > bv) return -sortDir;
+    return 0;
+  });
+}
+
+/* ── METRICS ── */
+function updateMetrics() {
+  const src = filtered;
+  const total    = src.length;
+  const lock     = src.reduce((s, r) => s + r.lock_n, 0);
+  const empty    = src.reduce((s, r) => s + r.empty_n, 0);
+  const online   = src.filter(r => r.aws_bool).length;
+  const offline  = total - online;
+  const onPct    = total > 0 ? Math.round(online / total * 100) : 0;
+
+  document.getElementById('m-total').textContent   = total.toLocaleString();
+  document.getElementById('m-lock').textContent    = lock.toLocaleString();
+  document.getElementById('m-empty').textContent   = empty.toLocaleString();
+  document.getElementById('m-online').textContent  = online.toLocaleString();
+  document.getElementById('m-offline').textContent = offline.toLocaleString();
+  document.getElementById('m-online-pct').textContent = onPct + '% dari total';
+}
+
+/* ── TABLE ── */
+function renderTable() {
+  const start = (page - 1) * PAGE;
+  const rows  = filtered.slice(start, start + PAGE);
+  const tbody = document.getElementById('tbody');
+
+  if (!rows.length) {
+    renderEmpty('Tidak ada terminal yang cocok dengan filter.'); return;
+  }
+
+  tbody.innerHTML = rows.map(r => {
+    const pct   = r.currentPB_num;
+    const bClr  = pct >= 80 ? '#4ade80' : pct >= 50 ? '#fbbf24' : '#f87171';
+    const lCls  = r.lock_n >= 4 ? 'lp-high' : r.lock_n >= 2 ? 'lp-med' : 'lp-low';
+    const aCls  = r.aws_bool ? 'aws-on' : 'aws-off';
+    const aTxt  = r.aws_bool ? 'Online' : 'Offline';
+    const pwa   = r['PWA'] || '#';
+
+    return `<tr>
+      <td class="cell-name" title="${esc(r['Terminal Name'])}">${esc(r['Terminal Name'])}</td>
+      <td class="cell-area">${esc(r['Deployed Area'])}</td>
+      <td><span class="cell-type">${esc(r['typeID'] || '—')}</span></td>
+      <td><span class="lock-pill ${lCls}">${r.lock_n}</span></td>
+      <td class="cell-mono">${r.slots_n}</td>
+      <td>
+        <div class="fill-wrap">
+          <div class="fill-bg"><div class="fill-bar" style="width:${pct}%;background:${bClr}"></div></div>
+          <span class="fill-pct">${pct}%</span>
+        </div>
+      </td>
+      <td class="cell-mono" style="color:#a1a1aa">${r.empty_n}</td>
+      <td class="cell-mono" style="color:#a1a1aa">${r.charging_n}</td>
+      <td><span class="aws-pill ${aCls}">${aTxt}</span></td>
+      <td class="link-cell"><a href="${esc(pwa)}" target="_blank" title="Buka di ops.recharge.sh">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3"/><path d="M10 2h4v4"/><line x1="14" y1="2" x2="7" y2="9"/>
+        </svg>
+      </a></td>
+    </tr>`;
+  }).join('');
+
+  const total = filtered.length;
+  const totalPages = Math.ceil(total / PAGE);
+  document.getElementById('pag-info').textContent = `Hal ${page} / ${totalPages} — ${total} terminal`;
+  document.getElementById('btn-prev').disabled = page <= 1;
+  document.getElementById('btn-next').disabled = page >= totalPages;
+}
+
+function renderEmpty(msg) {
+  document.getElementById('tbody').innerHTML =
+    `<tr class="state-row"><td colspan="10"><div class="big-icon">📭</div><div>${msg}</div></td></tr>`;
+}
+
+function changePage(d) { page += d; renderTable(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── CHARTS ── */
+function renderCharts() {
+  const gridColor  = 'rgba(255,255,255,.06)';
+  const labelColor = '#71717a';
+  const accentClr  = '#adff2f';
+  const redClr     = '#f87171';
+
+  /* Area chart */
+  const areaMap = {};
+  filtered.forEach(r => { areaMap[r['Deployed Area']] = (areaMap[r['Deployed Area']] || 0) + r.lock_n; });
+  const areaSorted = Object.entries(areaMap).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const aLabels = areaSorted.map(([a]) => a.replace('KOTA ','').replace('KABUPATEN ',''));
+  const aVals   = areaSorted.map(([, v]) => v);
+
+  if (chartA) chartA.destroy();
+  chartA = new Chart(document.getElementById('chartArea'), {
+    type: 'bar',
+    data: {
+      labels: aLabels,
+      datasets: [{ label: 'PB Lock', data: aVals, backgroundColor: redClr, borderRadius: 3, borderSkipped: false }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + ctx.raw + ' PB Lock' } } },
+      scales: {
+        x: { grid: { color: gridColor }, ticks: { color: labelColor, font: { size: 11 } },
+             border: { color: 'transparent' } },
+        y: { grid: { display: false }, ticks: { color: labelColor, font: { size: 11 } },
+             border: { color: 'transparent' } }
+      }
+    }
+  });
+
+  /* Distribution chart */
+  const distMap = {};
+  filtered.forEach(r => { distMap[r.lock_n] = (distMap[r.lock_n] || 0) + 1; });
+  const dKeys = Object.keys(distMap).map(Number).sort((a, b) => a - b);
+  const dVals = dKeys.map(k => distMap[k]);
+
+  if (chartD) chartD.destroy();
+  chartD = new Chart(document.getElementById('chartDist'), {
+    type: 'bar',
+    data: {
+      labels: dKeys.map(k => k + ' lock'),
+      datasets: [{ label: 'Terminal', data: dVals, backgroundColor: accentClr + 'bb', borderRadius: 4, borderSkipped: false }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + ctx.raw + ' terminal' } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: labelColor, font: { size: 11 } },
+             border: { color: 'transparent' } },
+        y: { grid: { color: gridColor }, ticks: { color: labelColor, font: { size: 11 } }, beginAtZero: true,
+             border: { color: 'transparent' } }
+      }
+    }
+  });
+}
+
+/* ── UTILS ── */
+function showLoading(v) {
+  const el = document.getElementById('loading-overlay');
+  if (v) el.classList.remove('hidden'); else el.classList.add('hidden');
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-banner');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+}
+
+function hideError() {
+  document.getElementById('error-banner').style.display = 'none';
+}
+
+/* ── INIT ── */
+loadData();
+</script>
+</body>
+</html>
