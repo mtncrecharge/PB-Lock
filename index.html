@@ -592,10 +592,11 @@
       <table>
         <thead>
           <tr>
-            <th onclick="sortBy('Terminal Name')">Terminal <span class="si" id="si-Terminal Name">↕</span></th>
+            <th onclick="sortBy('Terminal ID')">Terminal ID <span class="si" id="si-Terminal ID">↕</span></th>
+            <th onclick="sortBy('Terminal Name')">Terminal Name <span class="si" id="si-Terminal Name">↕</span></th>
             <th onclick="sortBy('Deployed Area')">Area <span class="si" id="si-Deployed Area">↕</span></th>
             <th onclick="sortBy('typeID')">Type <span class="si" id="si-typeID">↕</span></th>
-            <th onclick="sortBy('lock_n')">PB Lock <span class="si" id="si-lock_n">↕</span></th>
+            <th onclick="sortBy('lock_n')">PB Lock <span class="si" id="si-lock_n">↓</span></th>
             <th onclick="sortBy('slots_n')">Slots <span class="si" id="si-slots_n">↕</span></th>
             <th onclick="sortBy('currentPB_num')">Fill % <span class="si" id="si-currentPB_num">↕</span></th>
             <th onclick="sortBy('empty_n')">Empty <span class="si" id="si-empty_n">↕</span></th>
@@ -605,7 +606,7 @@
           </tr>
         </thead>
         <tbody id="tbody">
-          <tr class="state-row"><td colspan="10"><div class="big-icon">⏳</div><div>Loading...</div></td></tr>
+          <tr class="state-row"><td colspan="11"><div class="big-icon">⏳</div><div>Loading...</div></td></tr>
         </tbody>
       </table>
     </div>
@@ -654,6 +655,7 @@ async function loadData() {
     allData = parseCSV(text).map(enrich);
     populateFilters();
     applyFilters();
+    initSortIndicator();
     document.getElementById('last-updated').textContent =
       'Updated ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   } catch (e) {
@@ -748,6 +750,9 @@ function sortBy(key) {
   else { sortKey = key; sortDir = -1; }
 
   document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
+  document.querySelectorAll('thead .si').forEach(si => {
+    si.textContent = '↕';
+  });
   const si = document.getElementById('si-' + key);
   if (si) {
     si.closest('th').classList.add('sorted');
@@ -755,6 +760,14 @@ function sortBy(key) {
   }
   doSort();
   renderTable();
+}
+
+function initSortIndicator() {
+  const si = document.getElementById('si-' + sortKey);
+  if (si) {
+    si.closest('th').classList.add('sorted');
+    si.textContent = '↓';
+  }
 }
 
 function doSort() {
@@ -806,6 +819,7 @@ function renderTable() {
     const pwa = 'https://ops.recharge.sh/terminal/' + (r['Terminal ID'] || '').trim();
 
     return `<tr>
+      <td class="cell-mono" style="font-size:11px;color:var(--muted2)">${esc(r['Terminal ID'] || '—')}</td>
       <td class="cell-name" title="${esc(r['Terminal Name'])}">${esc(r['Terminal Name'])}</td>
       <td class="cell-area">${esc(r['Deployed Area'])}</td>
       <td><span class="cell-type">${esc(r['typeID'] || '—')}</span></td>
@@ -836,7 +850,7 @@ function renderTable() {
 
 function renderEmpty(msg) {
   document.getElementById('tbody').innerHTML =
-    `<tr class="state-row"><td colspan="10"><div class="big-icon">📭</div><div>${msg}</div></td></tr>`;
+    `<tr class="state-row"><td colspan="11"><div class="big-icon">📭</div><div>${msg}</div></td></tr>`;
 }
 
 function changePage(d) { page += d; renderTable(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
