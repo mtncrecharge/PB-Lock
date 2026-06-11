@@ -669,12 +669,12 @@ document.getElementById('btn-refresh').addEventListener('click', loadData);
 
 /* ── CSV PARSER ── */
 function parseCSV(raw) {
-  const lines = raw.trim().split('\n');
+  const lines = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim().split('\n');
   const hdrs  = splitCSVLine(lines[0]);
   return lines.slice(1).map(l => {
     const vals = splitCSVLine(l);
     const row  = {};
-    hdrs.forEach((h, i) => row[h] = (vals[i] ?? '').trim());
+    hdrs.forEach((h, i) => row[h.trim()] = (vals[i] ?? '').trim());
     return row;
   }).filter(r => r['Total PB Lock'] && r['Total PB Lock'] !== '');
 }
@@ -685,7 +685,7 @@ function splitCSVLine(line) {
     if (c === '"') { inQ = !inQ; continue; }
     if (c === ',' && !inQ) { out.push(cur); cur = ''; } else cur += c;
   }
-  out.push(cur);
+  out.push(cur.replace(/\r$/, ''));
   return out;
 }
 
@@ -803,7 +803,7 @@ function renderTable() {
     const lCls  = r.lock_n >= 4 ? 'lp-high' : r.lock_n >= 2 ? 'lp-med' : 'lp-low';
     const aCls  = r.aws_bool ? 'aws-on' : 'aws-off';
     const aTxt  = r.aws_bool ? 'Online' : 'Offline';
-    const pwa   = r['PWA'] || '#';
+    const pwa = 'https://ops.recharge.sh/terminal/' + (r['Terminal ID'] || '').trim();
 
     return `<tr>
       <td class="cell-name" title="${esc(r['Terminal Name'])}">${esc(r['Terminal Name'])}</td>
@@ -820,11 +820,10 @@ function renderTable() {
       <td class="cell-mono" style="color:#a1a1aa">${r.empty_n}</td>
       <td class="cell-mono" style="color:#a1a1aa">${r.charging_n}</td>
       <td><span class="aws-pill ${aCls}">${aTxt}</span></td>
-      <td class="link-cell"><a href="${esc(pwa)}" target="_blank" title="Buka di ops.recharge.sh">
+      <td class="link-cell"><a href="${esc(pwa)}" target="_blank" title="${esc(pwa)}">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M6 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3"/><path d="M10 2h4v4"/><line x1="14" y1="2" x2="7" y2="9"/>
-        </svg>
-      </a></td>
+        </svg></a></td>
     </tr>`;
   }).join('');
 
