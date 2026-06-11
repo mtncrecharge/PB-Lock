@@ -632,30 +632,37 @@ const PAGE = 20;
 let chartA = null, chartD = null;
 
 /* ── LOAD ── */
+function fetchWithTimeout(url, ms) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(timer));
+}
+
 async function loadData() {
   showLoading(true);
   hideError();
   const icon = document.getElementById('refresh-icon');
   icon.classList.add('spinning');
 
-  let lastErr;
-  for (const proxy of PROXIES) {
-    try {
-      const res = await fetch(proxy(CSV_URL));
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const text = await res.text();
-      allData = parseCSV(text).map(enrich);
-      populateFilters();
-      applyFilters();
-      document.getElementById('last-updated').textContent =
-        'Updated ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      return;
-    } catch (e) {
-      lastErr = e;
-    }
+  const attempts = PROXIES.map(proxy =>
+    fetchWithTimeout(proxy(CSV_URL), 5000)
+      .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.text(); })
+  );
+
+  try {
+    const text = await Promise.any(attempts);
+    allData = parseCSV(text).map(enrich);
+    populateFilters();
+    applyFilters();
+    document.getElementById('last-updated').textContent =
+      'Updated ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  } catch (e) {
+    showError('Gagal fetch data — Pastikan GSheet sudah di-publish (File → Share → Publish to web → CSV).');
+    renderEmpty('Tidak dapat memuat data dari Google Sheets.');
+  } finally {
+    showLoading(false);
+    icon.classList.remove('spinning');
   }
-  showError('Gagal fetch data: ' + lastErr.message + ' — Pastikan GSheet sudah di-publish (File → Share → Publish to web → CSV).');
-  renderEmpty('Tidak dapat memuat data dari Google Sheets.');
 }
 
 document.getElementById('btn-refresh').addEventListener('click', loadData);
