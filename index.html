@@ -395,7 +395,7 @@
     background: #0d1f0f;
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 20;
   }
 
   body.phone-mode thead th {
@@ -692,7 +692,7 @@
     overflow: hidden;
   }
 
-  .table-scroll { overflow-x: auto; }
+  .table-scroll { overflow-x: auto; overflow-y: auto; max-height: 60vh; }
 
   table {
     width: 100%;
@@ -703,6 +703,9 @@
   thead {
     background: var(--bg3);
     border-bottom: 1px solid var(--border2);
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
 
   thead th {
