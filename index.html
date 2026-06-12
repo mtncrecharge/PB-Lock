@@ -140,129 +140,241 @@
   .btn-view.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
   .btn-view svg { width: 13px; height: 13px; flex-shrink: 0; }
 
-  /* ── PHONE MODE ── */
+  /* ── PHONE MODE — Dispatch Style ── */
   body.phone-mode {
-    background: #0a0a0a;
+    background: #0a110b;
     display: flex;
     justify-content: center;
     align-items: flex-start;
     min-height: 100vh;
-    padding: 20px 0;
+    padding: 0;
   }
 
   body.phone-mode #phone-frame {
-    width: 393px;
-    min-height: 852px;
-    background: var(--bg);
-    border-radius: 16px;
-    border: 10px solid #111;
-    box-shadow:
-      0 0 0 1px #2a2a2a,
-      0 0 0 3px #1a1a1a,
-      0 40px 100px rgba(0,0,0,.9);
+    width: 100%;
+    max-width: 430px;
+    min-height: 100vh;
+    background: #0a110b;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
     overflow: hidden;
     position: relative;
     display: flex;
     flex-direction: column;
   }
 
-  /* Android status bar */
-  body.phone-mode #phone-frame::before {
-    content: '';
-    display: block;
-    height: 28px;
-    background: #0d0d0d;
-    flex-shrink: 0;
+  /* ─ Override CSS vars in phone mode ─ */
+  body.phone-mode {
+    --bg:  #0a110b;
+    --bg2: #111a12;
+    --bg3: #0d1f0f;
+    --bg4: #162418;
+    --border: #1c3120;
+    --border2: #243b27;
+    --text: #e2f0e4;
+    --muted: #6db87a;
+    --muted2: #8bc99a;
+    --accent: #00e676;
+    --accent-dim: rgba(0,230,118,.12);
+    --accent-dim2: rgba(0,230,118,.06);
+    --red: #ff5252;
+    --red-bg: rgba(255,82,82,.15);
+    --amber: #ffb300;
+    --amber-bg: rgba(255,179,0,.15);
+    --green: #00e676;
+    --green-bg: rgba(0,230,118,.13);
+    --blue: #00e5ff;
+    --blue-bg: rgba(0,229,255,.12);
   }
 
-  /* Android nav bar (bottom) */
-  body.phone-mode #phone-frame::after {
-    content: '— — —';
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 28px;
-    background: #0d0d0d;
-    color: #444;
-    font-size: 10px;
-    letter-spacing: 4px;
-    flex-shrink: 0;
-    order: 999;
-  }
-
-  body.phone-mode #phone-frame > .topbar {
+  /* ─ Topbar → dispatch header style ─ */
+  body.phone-mode .topbar {
     position: relative;
     top: auto;
+    background: #060d07;
+    border-bottom: 3px solid #00e676;
+    padding: 10px 14px;
+    height: auto;
   }
 
-  body.phone-mode #phone-frame > .topbar .last-updated {
+  body.phone-mode .logo-pill {
+    background: #00e676;
+    color: #060d07;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 3px 8px;
+    letter-spacing: .05em;
+  }
+
+  body.phone-mode .topbar-title {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  body.phone-mode .topbar-title span {
     display: none;
   }
 
-  body.phone-mode #phone-frame > #main-scroll {
+  body.phone-mode .topbar-right .last-updated {
+    display: none;
+  }
+
+  body.phone-mode .btn-refresh,
+  body.phone-mode .btn-view {
+    background: rgba(255,255,255,.09);
+    border-color: rgba(255,255,255,.18);
+    color: #fff;
+    font-size: 11px;
+    padding: 5px 9px;
+  }
+
+  body.phone-mode .btn-refresh:hover,
+  body.phone-mode .btn-view:hover,
+  body.phone-mode .btn-view.active {
+    border-color: #00e676;
+    color: #00e676;
+    background: rgba(0,230,118,.12);
+  }
+
+  /* ─ Scrollable main area ─ */
+  body.phone-mode #main-scroll {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
   }
 
+  /* ─ Shell ─ */
   body.phone-mode .shell {
     max-width: 100%;
-    padding: 12px 12px 40px;
+    padding: 10px 12px 48px;
   }
 
+  /* ─ Metric cards ─ */
   body.phone-mode .metric-grid {
     grid-template-columns: repeat(3, 1fr);
     gap: 6px;
+    margin-bottom: 12px;
   }
 
   body.phone-mode .metric {
+    background: #111a12;
+    border: 1.5px solid #1c3120;
+    border-radius: 10px;
     padding: 8px 9px;
-    border-radius: var(--radius);
+    box-shadow: 0 1px 3px rgba(0,0,0,.07);
   }
+
+  body.phone-mode .metric::before { display: none; }
 
   body.phone-mode .metric-label {
-    font-size: 8.5px;
+    font-size: 8px;
+    color: #8bc99a;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: .04em;
     margin-bottom: 4px;
-    letter-spacing: .03em;
-  }
-
-  body.phone-mode .metric-value {
-    font-size: 18px;
-  }
-
-  body.phone-mode .metric-sub {
-    font-size: 9px;
-    margin-top: 2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  body.phone-mode .chart-row {
-    grid-template-columns: 1fr;
+  body.phone-mode .metric-value {
+    font-size: 1.3rem;
+    font-weight: 800;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    line-height: 1;
   }
 
+  body.phone-mode .metric-sub {
+    font-size: 8.5px;
+    margin-top: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #6db87a;
+    font-weight: 500;
+  }
+
+  /* ─ Charts ─ */
+  body.phone-mode .chart-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  body.phone-mode .chart-card {
+    background: #111a12;
+    border: 1.5px solid #1c3120;
+    border-radius: 10px;
+    padding: 12px;
+  }
+
+  body.phone-mode .chart-card-title {
+    font-size: 9px;
+    font-weight: 800;
+    color: #6db87a;
+    letter-spacing: .05em;
+  }
+
+  /* ─ Filters ─ */
   body.phone-mode .filter-bar {
     flex-direction: column;
     align-items: stretch;
+    gap: 7px;
+    background: #111a12;
+    border: 1.5px solid #1c3120;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
   }
 
   body.phone-mode .filter-bar input,
   body.phone-mode .filter-bar select {
     min-width: 0;
     width: 100%;
+    background: #0d1f0f;
+    border: 1.5px solid #1c3120;
+    color: #e2f0e4;
+    font-size: 13px;
+    padding: 9px 12px;
+    border-radius: 9px;
+    font-weight: 500;
+  }
+
+  body.phone-mode .filter-bar input:focus,
+  body.phone-mode .filter-bar select:focus {
+    border-color: #00e676;
+    outline: none;
   }
 
   body.phone-mode .filter-bar .result-count {
     margin-left: 0;
     text-align: right;
+    background: #00e676;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-family: inherit;
+    align-self: flex-end;
   }
 
-  /* Table: no horizontal scroll — show only essential columns */
+  /* ─ Table card ─ */
+  body.phone-mode .table-card {
+    background: #111a12;
+    border: 1.5px solid #1c3120;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.07);
+  }
+
   body.phone-mode .table-scroll {
     font-size: 11px;
     overflow-x: hidden;
+    max-height: 55vh;
+    overflow-y: auto;
   }
 
   body.phone-mode table {
@@ -270,67 +382,128 @@
     table-layout: fixed;
   }
 
-  body.phone-mode thead th,
-  body.phone-mode tbody td {
-    padding: 7px 6px;
+  body.phone-mode thead {
+    background: #0d1f0f;
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
 
-  /* Hide: Terminal ID(1), Type(4), Slots(6), Empty(8), Charging(9), AWS(10) */
-  body.phone-mode thead th:nth-child(1),
-  body.phone-mode tbody td:nth-child(1),
+  body.phone-mode thead th {
+    padding: 8px 6px;
+    font-size: 9px;
+    font-weight: 800;
+    color: #00e676;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    border-bottom: 2px solid #1c3120;
+  }
+
+  body.phone-mode thead th:hover { color: #e2f0e4; }
+  body.phone-mode thead th.sorted { color: #00e676; }
+  body.phone-mode thead th .si { color: #00e676; opacity: .6; }
+
+  body.phone-mode tbody tr {
+    border-bottom: 1px solid #1c3120;
+  }
+  body.phone-mode tbody tr:hover { background: rgba(0,230,118,.06); }
+
+  body.phone-mode tbody td {
+    padding: 7px 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+    color: #e2f0e4;
+  }
+
+  /* Phone mode table: hide all except Terminal ID(1), Terminal Name(2), chevron(12) */
+  body.phone-mode thead th:nth-child(3),
+  body.phone-mode tbody td:nth-child(3),
   body.phone-mode thead th:nth-child(4),
   body.phone-mode tbody td:nth-child(4),
+  body.phone-mode thead th:nth-child(5),
+  body.phone-mode tbody td:nth-child(5),
   body.phone-mode thead th:nth-child(6),
   body.phone-mode tbody td:nth-child(6),
+  body.phone-mode thead th:nth-child(7),
+  body.phone-mode tbody td:nth-child(7),
   body.phone-mode thead th:nth-child(8),
   body.phone-mode tbody td:nth-child(8),
   body.phone-mode thead th:nth-child(9),
   body.phone-mode tbody td:nth-child(9),
   body.phone-mode thead th:nth-child(10),
-  body.phone-mode tbody td:nth-child(10) {
-    display: none;
-  }
-
-  /* Remaining visible columns: Terminal Name(2), Area(3), PB Lock(5), Fill%(7), Link(11) */
-  body.phone-mode thead th:nth-child(2),
-  body.phone-mode tbody td:nth-child(2) { width: 38%; }
-
-  body.phone-mode thead th:nth-child(3),
-  body.phone-mode tbody td:nth-child(3) { width: 24%; }
-
-  body.phone-mode thead th:nth-child(5),
-  body.phone-mode tbody td:nth-child(5) { width: 14%; }
-
-  body.phone-mode thead th:nth-child(7),
-  body.phone-mode tbody td:nth-child(7) { width: 18%; }
-
+  body.phone-mode tbody td:nth-child(10),
   body.phone-mode thead th:nth-child(11),
-  body.phone-mode tbody td:nth-child(11) { width: 6%; }
-
-  body.phone-mode .cell-name {
-    max-width: none;
-  }
-
-  body.phone-mode .cell-area {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  body.phone-mode .fill-wrap {
-    min-width: 0;
-  }
-
-  body.phone-mode .fill-pct {
-    min-width: 28px;
-  }
-
-  body.phone-mode .topbar {
-    padding: 0 14px;
-  }
-
-  body.phone-mode .topbar-title span {
+  body.phone-mode tbody td:nth-child(11) {
     display: none;
+  }
+
+  body.phone-mode thead th:nth-child(1),
+  body.phone-mode tbody td:nth-child(1) { width: 28%; }
+  body.phone-mode thead th:nth-child(2),
+  body.phone-mode tbody td:nth-child(2) { width: auto; }
+  body.phone-mode thead th:nth-child(12),
+  body.phone-mode tbody td:nth-child(12) { width: 28px; text-align: center; }
+
+  body.phone-mode .cell-name { max-width: none; color: #e2f0e4; font-weight: 600; font-size: 11.5px; }
+  body.phone-mode .cell-area { color: #8bc99a; font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.phone-mode .fill-wrap { min-width: 0; }
+  body.phone-mode .fill-pct  { min-width: 28px; font-size: 10px; color: #8bc99a; }
+  body.phone-mode .fill-bg   { background: #1c3120; }
+
+  /* Expand row detail — dispatch dbox style */
+  body.phone-mode .expand-row td { padding: 0 !important; background: rgba(0,230,118,.03); border-bottom: 1px solid #1c3120; white-space: normal; }
+  body.phone-mode .expand-body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 8px; }
+  body.phone-mode .expand-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  body.phone-mode .expand-item { background: rgba(0,230,118,.05); border: 1px solid #1c3120; border-radius: 8px; padding: 7px 10px; }
+  body.phone-mode .expand-label { font-size: 8.5px; color: #6db87a; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; margin-bottom: 3px; }
+  body.phone-mode .expand-value { font-size: 12px; color: #e2f0e4; font-weight: 600; }
+  body.phone-mode .expand-btns  { display: flex; gap: 8px; margin-top: 2px; }
+  body.phone-mode .expand-btn   { flex: 1; padding: 8px; border-radius: 9px; font-size: 12px; font-weight: 700; text-decoration: none; text-align: center; border: none; cursor: pointer; }
+  body.phone-mode .expand-btn-ops { background: rgba(0,229,255,.12); color: #00e5ff; border: 1px solid rgba(0,229,255,.25); }
+
+  /* Chevron icon */
+  body.phone-mode .chevron-cell { color: #6db87a; font-size: 11px; transition: transform .2s; display: inline-block; }
+  body.phone-mode tr.row-expanded .chevron-cell { transform: rotate(90deg); color: #00e676; }
+
+  /* Lock pills → dispatch badge style */
+  body.phone-mode .lp-high { background: rgba(255,82,82,.18);  color: #ff5252; border: 1px solid rgba(255,82,82,.3);  font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+  body.phone-mode .lp-med  { background: rgba(255,179,0,.15);  color: #ffb300; border: 1px solid rgba(255,179,0,.3);  font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+  body.phone-mode .lp-low  { background: rgba(0,230,118,.13);  color: #00e676; border: 1px solid rgba(0,230,118,.3);  font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+
+  /* Link icon */
+  body.phone-mode .link-cell a { color: #6db87a; font-size: 14px; }
+  body.phone-mode .link-cell a:hover { color: #00e676; }
+
+  /* ─ Pagination ─ */
+  body.phone-mode .pagination {
+    background: #0d1f0f;
+    border-top: 1px solid #1c3120;
+    padding: 9px 12px;
+    font-size: 11px;
+    color: #6db87a;
+  }
+
+  body.phone-mode .pag-btn {
+    background: rgba(0,230,118,.08);
+    border: 1px solid rgba(0,230,118,.25);
+    color: #00e676;
+    font-size: 11px;
+    padding: 5px 14px;
+    border-radius: 20px;
+  }
+
+  body.phone-mode .pag-btn:hover:not(:disabled) { background: rgba(0,230,118,.18); border-color: #00e676; color: #00e676; }
+  body.phone-mode .pag-btn:disabled { opacity: .25; }
+
+  /* Error banner */
+  body.phone-mode .error-banner {
+    background: rgba(255,82,82,.12);
+    border-color: rgba(255,82,82,.28);
+    border-radius: 9px;
+    color: #ff5252;
+    font-size: 12px;
   }
 
   .spinning { animation: spin .8s linear infinite; }
@@ -824,10 +997,11 @@
             <th onclick="sortBy('charging_n')">Charging <span class="si" id="si-charging_n">↕</span></th>
             <th onclick="sortBy('aws_bool')">AWS <span class="si" id="si-aws_bool">↕</span></th>
             <th>Link</th>
+            <th></th>
           </tr>
         </thead>
         <tbody id="tbody">
-          <tr class="state-row"><td colspan="11"><div class="big-icon">⏳</div><div>Loading...</div></td></tr>
+          <tr class="state-row"><td colspan="12"><div class="big-icon">⏳</div><div>Loading...</div></td></tr>
         </tbody>
       </table>
     </div>
@@ -1091,15 +1265,18 @@ function renderTable() {
     renderEmpty('Tidak ada terminal yang cocok dengan filter.'); return;
   }
 
-  tbody.innerHTML = rows.map(r => {
+  const isPhone = document.body.classList.contains('phone-mode');
+
+  tbody.innerHTML = rows.map((r, idx) => {
     const pct   = r.currentPB_num;
     const bClr  = pct >= 80 ? '#4ade80' : pct >= 50 ? '#fbbf24' : '#f87171';
     const lCls  = r.lock_n >= 4 ? 'lp-high' : r.lock_n >= 2 ? 'lp-med' : 'lp-low';
     const aCls  = r.aws_bool ? 'aws-on' : 'aws-off';
     const aTxt  = r.aws_bool ? 'Online' : 'Offline';
-    const pwa = 'https://ops.recharge.sh/terminal/' + (r['Terminal ID'] || '').trim();
+    const pwa   = 'https://ops.recharge.sh/terminal/' + (r['Terminal ID'] || '').trim();
+    const rid   = 'row-' + (page - 1) * PAGE + idx;
 
-    return `<tr>
+    const mainRow = `<tr data-rid="${rid}" onclick="toggleExpandRow('${rid}', event)">
       <td class="cell-mono" style="font-size:11px;color:var(--muted2)">${esc(r['Terminal ID'] || '—')}</td>
       <td class="cell-name" title="${esc(r['Terminal Name'])}">${esc(r['Terminal Name'])}</td>
       <td class="cell-area">${esc(r['Deployed Area'])}</td>
@@ -1115,11 +1292,63 @@ function renderTable() {
       <td class="cell-mono" style="color:#a1a1aa">${r.empty_n}</td>
       <td class="cell-mono" style="color:#a1a1aa">${r.charging_n}</td>
       <td><span class="aws-pill ${aCls}">${aTxt}</span></td>
-      <td class="link-cell"><a href="${esc(pwa)}" target="_blank" title="${esc(pwa)}">
+      <td class="link-cell"><a href="${esc(pwa)}" target="_blank" title="${esc(pwa)}" onclick="event.stopPropagation()">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M6 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3"/><path d="M10 2h4v4"/><line x1="14" y1="2" x2="7" y2="9"/>
         </svg></a></td>
+      <td style="text-align:center"><span class="chevron-cell">›</span></td>
     </tr>`;
+
+    const expandRow = `<tr class="expand-row" id="expand-${rid}" style="display:none">
+      <td colspan="12">
+        <div class="expand-body">
+          <div class="expand-grid">
+            <div class="expand-item">
+              <div class="expand-label">Area</div>
+              <div class="expand-value">${esc(r['Deployed Area'] || '—')}</div>
+            </div>
+            <div class="expand-item">
+              <div class="expand-label">Type</div>
+              <div class="expand-value">${esc(r['typeID'] || '—')}</div>
+            </div>
+            <div class="expand-item">
+              <div class="expand-label">🔒 PB Lock</div>
+              <div class="expand-value"><span class="lock-pill ${lCls}" style="font-size:13px">${r.lock_n}</span></div>
+            </div>
+            <div class="expand-item">
+              <div class="expand-label">Slots</div>
+              <div class="expand-value">${r.slots_n}</div>
+            </div>
+            <div class="expand-item">
+              <div class="expand-label">Fill %</div>
+              <div class="expand-value">
+                <div class="fill-wrap" style="margin-top:2px">
+                  <div class="fill-bg" style="flex:1"><div class="fill-bar" style="width:${pct}%;background:${bClr}"></div></div>
+                  <span class="fill-pct">${pct}%</span>
+                </div>
+              </div>
+            </div>
+            <div class="expand-item">
+              <div class="expand-label">Empty Slot</div>
+              <div class="expand-value">${r.empty_n}</div>
+            </div>
+            <div class="expand-item">
+              <div class="expand-label">Charging</div>
+              <div class="expand-value">${r.charging_n}</div>
+            </div>
+            <div class="expand-item">
+              <div class="expand-label">AWS</div>
+              <div class="expand-value"><span class="aws-pill ${aCls}">${aTxt}</span></div>
+            </div>
+          </div>
+          <div class="expand-btns">
+            <a class="expand-btn expand-btn-ops" href="${esc(pwa)}" target="_blank">🔗 Buka OPS</a>
+          </div>
+        </div>
+      </td>
+    </tr>`;
+
+    return mainRow + expandRow;
   }).join('');
 
   const total = filtered.length;
@@ -1129,9 +1358,19 @@ function renderTable() {
   document.getElementById('btn-next').disabled = page >= totalPages;
 }
 
+function toggleExpandRow(rid, event) {
+  if (!document.body.classList.contains('phone-mode')) return;
+  const mainTr  = document.querySelector(`tr[data-rid="${rid}"]`);
+  const expandTr = document.getElementById('expand-' + rid);
+  if (!expandTr) return;
+  const isOpen = expandTr.style.display !== 'none';
+  expandTr.style.display = isOpen ? 'none' : '';
+  mainTr.classList.toggle('row-expanded', !isOpen);
+}
+
 function renderEmpty(msg) {
   document.getElementById('tbody').innerHTML =
-    `<tr class="state-row"><td colspan="11"><div class="big-icon">📭</div><div>${msg}</div></td></tr>`;
+    `<tr class="state-row"><td colspan="12"><div class="big-icon">📭</div><div>${msg}</div></td></tr>`;
 }
 
 function changePage(d) { page += d; renderTable(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
