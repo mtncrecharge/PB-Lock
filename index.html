@@ -1269,9 +1269,12 @@ function initSortIndicator() {
 
 function doSort() {
   filtered.sort((a, b) => {
-    let av = a[sortKey], bv = b[sortKey];
+    let av = a[sortKey] ?? 0, bv = b[sortKey] ?? 0;
     if (typeof av === 'string' && typeof bv === 'string') {
       av = av.toLowerCase(); bv = bv.toLowerCase();
+    } else {
+      av = Number(av) || 0;
+      bv = Number(bv) || 0;
     }
     if (av < bv) return sortDir;
     if (av > bv) return -sortDir;
