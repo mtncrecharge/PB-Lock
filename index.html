@@ -455,7 +455,8 @@
   body.phone-mode thead th:nth-child(12),
   body.phone-mode tbody td:nth-child(12) { width: 28px; text-align: center; }
 
-  body.phone-mode .cell-name { max-width: none; color: #e2f0e4; font-weight: 600; font-size: 11.5px; }
+  body.phone-mode .cell-name { max-width: none; color: #e2f0e4; font-weight: 600; font-size: 11.5px; white-space: normal !important; overflow: visible !important; text-overflow: unset !important; word-break: break-word; line-height: 1.3; }
+  body.phone-mode tbody td:nth-child(1) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px; color: #6db87a !important; }
   body.phone-mode .cell-area { color: #8bc99a; font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   body.phone-mode .fill-wrap { min-width: 0; }
   body.phone-mode .fill-pct  { min-width: 28px; font-size: 10px; color: #8bc99a; }
