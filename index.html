@@ -212,8 +212,31 @@
   }
 
   body.phone-mode .metric-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  body.phone-mode .metric {
+    padding: 8px 9px;
+    border-radius: var(--radius);
+  }
+
+  body.phone-mode .metric-label {
+    font-size: 8.5px;
+    margin-bottom: 4px;
+    letter-spacing: .03em;
+  }
+
+  body.phone-mode .metric-value {
+    font-size: 18px;
+  }
+
+  body.phone-mode .metric-sub {
+    font-size: 9px;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   body.phone-mode .chart-row {
@@ -236,17 +259,70 @@
     text-align: right;
   }
 
+  /* Table: no horizontal scroll — show only essential columns */
   body.phone-mode .table-scroll {
     font-size: 11px;
+    overflow-x: hidden;
+  }
+
+  body.phone-mode table {
+    width: 100%;
+    table-layout: fixed;
   }
 
   body.phone-mode thead th,
   body.phone-mode tbody td {
-    padding: 7px 8px;
+    padding: 7px 6px;
   }
 
+  /* Hide: Terminal ID(1), Type(4), Slots(6), Empty(8), Charging(9), AWS(10) */
+  body.phone-mode thead th:nth-child(1),
+  body.phone-mode tbody td:nth-child(1),
+  body.phone-mode thead th:nth-child(4),
+  body.phone-mode tbody td:nth-child(4),
+  body.phone-mode thead th:nth-child(6),
+  body.phone-mode tbody td:nth-child(6),
+  body.phone-mode thead th:nth-child(8),
+  body.phone-mode tbody td:nth-child(8),
+  body.phone-mode thead th:nth-child(9),
+  body.phone-mode tbody td:nth-child(9),
+  body.phone-mode thead th:nth-child(10),
+  body.phone-mode tbody td:nth-child(10) {
+    display: none;
+  }
+
+  /* Remaining visible columns: Terminal Name(2), Area(3), PB Lock(5), Fill%(7), Link(11) */
+  body.phone-mode thead th:nth-child(2),
+  body.phone-mode tbody td:nth-child(2) { width: 38%; }
+
+  body.phone-mode thead th:nth-child(3),
+  body.phone-mode tbody td:nth-child(3) { width: 24%; }
+
+  body.phone-mode thead th:nth-child(5),
+  body.phone-mode tbody td:nth-child(5) { width: 14%; }
+
+  body.phone-mode thead th:nth-child(7),
+  body.phone-mode tbody td:nth-child(7) { width: 18%; }
+
+  body.phone-mode thead th:nth-child(11),
+  body.phone-mode tbody td:nth-child(11) { width: 6%; }
+
   body.phone-mode .cell-name {
-    max-width: 120px;
+    max-width: none;
+  }
+
+  body.phone-mode .cell-area {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.phone-mode .fill-wrap {
+    min-width: 0;
+  }
+
+  body.phone-mode .fill-pct {
+    min-width: 28px;
   }
 
   body.phone-mode .topbar {
@@ -766,10 +842,12 @@
 
 <script>
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTMWv2mD7Ji9EY5gAuC0tRquUY7qQGBT-rI4IpsU6JfrM-7XrLOom3Q4GTpt1dWYbEYEH146BWpPfxD/pub?gid=1068833881&single=true&output=csv';
+const CACHE_KEY = 'pb_lock_csv_cache';
 const PROXIES = [
-  u => u,
+  u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
   u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
   u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  u => u,
 ];
 
 let allData = [], filtered = [];
@@ -784,8 +862,6 @@ function togglePhoneView() {
   const btn  = document.getElementById('btn-view');
   const isPhone = body.classList.toggle('phone-mode');
   btn.classList.toggle('active', isPhone);
-  btn.querySelector('svg').style.opacity = isPhone ? '1' : '';
-  // Re-render charts after layout shift
   setTimeout(() => { if (allData.length) renderCharts(); }, 50);
 }
 
@@ -796,28 +872,76 @@ function fetchWithTimeout(url, ms) {
   return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(timer));
 }
 
-async function loadData() {
-  showLoading(true);
+function loadCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+
+function saveCache(csvText) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), csv: csvText })); } catch {}
+}
+
+let retryTimer = null;
+
+async function loadData(isRetry = false) {
+  if (!isRetry) {
+    // Show cached data instantly while fetching live
+    const cache = loadCache();
+    if (cache) {
+      try {
+        allData = parseCSV(cache.csv).map(enrich);
+        populateFilters();
+        applyFilters();
+        initSortIndicator();
+        const age = Math.round((Date.now() - cache.ts) / 60000);
+        document.getElementById('last-updated').textContent =
+          'Cache ' + age + 'm ago — fetching...';
+      } catch {}
+    }
+  }
+
+  showLoading(!loadCache()); // only block UI if no cache
   hideError();
   const icon = document.getElementById('refresh-icon');
   icon.classList.add('spinning');
 
   const attempts = PROXIES.map(proxy =>
-    fetchWithTimeout(proxy(CSV_URL), 5000)
-      .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.text(); })
+    fetchWithTimeout(proxy(CSV_URL), 8000)
+      .then(res => {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.text();
+      })
+      .then(text => {
+        // Validate it's real CSV with expected headers
+        if (!text.includes('Terminal ID') && !text.includes('Terminal Name')) throw new Error('Invalid CSV');
+        return text;
+      })
   );
 
   try {
     const text = await Promise.any(attempts);
+    saveCache(text);
     allData = parseCSV(text).map(enrich);
     populateFilters();
     applyFilters();
     initSortIndicator();
     document.getElementById('last-updated').textContent =
       'Updated ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    if (retryTimer) { clearInterval(retryTimer); retryTimer = null; }
   } catch (e) {
-    showError('Gagal fetch data — Pastikan GSheet sudah di-publish (File → Share → Publish to web → CSV).');
-    renderEmpty('Tidak dapat memuat data dari Google Sheets.');
+    if (!loadCache()) {
+      showError('Gagal fetch data — mencoba ulang...');
+      renderEmpty('Mencoba memuat data...');
+    } else {
+      document.getElementById('last-updated').textContent += ' (gagal, retry...)';
+    }
+    // Auto retry every 4s if failed
+    if (!retryTimer) {
+      retryTimer = setInterval(() => loadData(true), 1500);
+    }
   } finally {
     showLoading(false);
     icon.classList.remove('spinning');
