@@ -1073,8 +1073,10 @@ function togglePhoneView() {
   btn.classList.toggle('active', isPhone);
   // Resize chart wrapper heights for phone/desktop
   const h = isPhone ? '180px' : '240px';
-  document.getElementById('chartAreaWrap').style.height = h;
-  document.getElementById('chartDistWrap').style.height = h;
+  const wA = document.getElementById('chartAreaWrap');
+  const wD = document.getElementById('chartDistWrap');
+  if (wA) wA.style.height = h;
+  if (wD) wD.style.height = h;
   // Destroy charts so Chart.js recalculates canvas size cleanly
   if (chartA) { chartA.destroy(); chartA = null; }
   if (chartD) { chartD.destroy(); chartD = null; }
@@ -1155,9 +1157,8 @@ async function loadData(isRetry = false) {
       document.getElementById('last-updated').textContent += ' (gagal, retry...)';
     }
     // Auto retry every 4s if failed
-    if (!retryTimer) {
-      retryTimer = setInterval(() => loadData(true), 1500);
-    }
+    if (retryTimer) clearInterval(retryTimer);
+    retryTimer = setInterval(() => loadData(true), 1500);
   } finally {
     showLoading(false);
     icon.classList.remove('spinning');
@@ -1222,7 +1223,7 @@ function applyFilters() {
   const type = document.getElementById('f-type').value;
 
   filtered = allData.filter(r => {
-    if (q && !r['Terminal Name'].toLowerCase().includes(q) && !r['Terminal ID'].toLowerCase().includes(q)) return false;
+    if (q && !(r['Terminal Name']||'').toLowerCase().includes(q) && !(r['Terminal ID']||'').toLowerCase().includes(q)) return false;
     if (area && r['Deployed Area'] !== area)  return false;
     if (aws === 'on'  && !r.aws_bool)          return false;
     if (aws === 'off' &&  r.aws_bool)          return false;
@@ -1269,12 +1270,14 @@ function initSortIndicator() {
 
 function doSort() {
   filtered.sort((a, b) => {
-    let av = a[sortKey] ?? 0, bv = b[sortKey] ?? 0;
-    if (typeof av === 'string' && typeof bv === 'string') {
-      av = av.toLowerCase(); bv = bv.toLowerCase();
-    } else {
+    let av = a[sortKey] ?? '', bv = b[sortKey] ?? '';
+    // numeric fields: stored as numbers in enrich()
+    if (typeof av === 'number' || typeof bv === 'number') {
       av = Number(av) || 0;
       bv = Number(bv) || 0;
+    } else {
+      av = String(av).toLowerCase();
+      bv = String(bv).toLowerCase();
     }
     if (av < bv) return sortDir;
     if (av > bv) return -sortDir;
@@ -1431,7 +1434,14 @@ function renderEmpty(msg) {
     `<tr class="state-row"><td colspan="12"><div class="big-icon">📭</div><div>${msg}</div></td></tr>`;
 }
 
-function changePage(d) { page += d; renderTable(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function changePage(d) {
+  page += d;
+  renderTable();
+  const scroller = document.body.classList.contains('phone-mode')
+    ? document.getElementById('main-scroll')
+    : window;
+  scroller.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
 function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -1439,6 +1449,7 @@ function esc(s) {
 
 /* ── CHARTS ── */
 function renderCharts() {
+  if (!filtered.length) return;
   const isPhone    = document.body.classList.contains('phone-mode');
   const gridColor  = isPhone ? 'rgba(0,230,118,.08)' : 'rgba(255,255,255,.06)';
   const labelColor = isPhone ? '#6db87a' : '#71717a';
